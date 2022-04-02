@@ -104,7 +104,7 @@ let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
 
         let density = float(deln)/float(measures.Length)
 
-        printfn $"({first:f3}; {(first + del):f3}): {String('=', int((density * 1000.0 * 100.0) / 1000.0))}"
+        printfn $"({first:f3}; {(first + del):f3}): {String('=', int(density * 100.0))}"
 
         table.AddRow(
             string(i), 
