@@ -5,6 +5,7 @@ open Spectre.Console
 open System.Collections.Generic
 open System.IO
 
+
 type uConfidenceLevel =
     | p80 = 0
     | p90 = 1
@@ -40,19 +41,17 @@ let generateRandomMeasures (min: int) (max: int) (decimalPlace: int) (count: int
 let arithmeticAverage (measures: float[]) : float =
     Array.sum measures / float(measures.Length)
  
-// Случайную погрешность отдельного измерения характеризует так называемое 
-// среднеквадратическое отклонение
+
 let standardDeviation (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
     sqrt(sum/(float(measures.Length) - 1.0))
 
-// Для оценки погрешности всей серии измерений, вместо отдельного измерения надо 
-// найти среднюю квадратичную погрешность среднего арифметического
+
 let standardError (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
     sqrt(sum/(float(measures.Length) * (float(measures.Length) - 1.0)))
 
-// https://www.chem-astu.ru/science/reference/t-statistic.html
+
 let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLevel) : float =
     match confidenceLevel with
     | uConfidenceLevel.p95 -> match measuresLength with
@@ -81,12 +80,13 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
 
     | confidenceLevel -> 0
 
-// Средняя абсолютная погрешность
+
 let AverageAbsoluteError (stDeviation: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
     stDeviation * getStudentCoefficient measuresLength confidenceLevel
 
+
 let DisplayHistorgramDataTable (measures: float[]) : unit =
-    let table = new Table();
+    let table = Table();
 
     let del = ((measures |> Array.max) - (measures |> Array.min)) / 7.0
     let mutable first = measures |> Array.min
@@ -94,10 +94,9 @@ let DisplayHistorgramDataTable (measures: float[]) : unit =
     let maxHistorgramSize = 60
 
     table.AddColumn("№") |> ignore
-    table.AddColumn("Interval") |> ignore
-    table.AddColumn("deln") |> ignore // результатов наблюдений Δn, попавших в
-                                      // каждый интервал
-    table.AddColumn("deln/(n*delt)") |> ignore // значения плотности вероятности попадания
+    table.AddColumn("Границы интервалов") |> ignore
+    table.AddColumn("deln") |> ignore // результатов наблюдений Δn, попавших в каждый интервал
+    table.AddColumn("deln/(n delt)") |> ignore // значения плотности вероятности попадания
                                                // случайной величины в интервал
 
     for i = 1 to 7 do
@@ -110,12 +109,13 @@ let DisplayHistorgramDataTable (measures: float[]) : unit =
             string(i), 
             $"({first:f3}; {(first + del):f3})", 
             string(deln),
-            string(density)
+            $"{density:f3}"
         ) |> ignore
         
         first <- first + del
 
     AnsiConsole.Write(table);
+
 
 let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation: float) : unit =
     let table = new Table();
@@ -130,12 +130,12 @@ let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation:
             string(number), 
             $"({left:f3}; {right:f3})", 
             string(deln),
-            string(density),
+            $"{density:f3}",
             string(a)
         ) |> ignore        
 
     table.AddColumn("№") |> ignore
-    table.AddColumn("Interval") |> ignore
+    table.AddColumn("Границы интервалов") |> ignore
     table.AddColumn("deln") |> ignore
     table.AddColumn("deln/n") |> ignore
     table.AddColumn("a") |> ignore
