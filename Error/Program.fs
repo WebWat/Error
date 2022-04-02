@@ -113,6 +113,36 @@ let DisplayHistorgramDataTable (measures: float[]) : unit =
 
     AnsiConsole.Write(table);
 
+let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation: float) : unit =
+    let table = new Table();
+
+    let addRow (number: int) (left: float) (right: float) (a: float) = 
+        let deln = Array.where (fun x -> x > left && x < right) measures 
+                   |> Array.length
+
+        let density = float(deln)/float(measures.Length)
+
+        table.AddRow(
+            string(number), 
+            $"({left:f3}; {right:f3})", 
+            string(deln),
+            string(density),
+            string(a)
+        ) |> ignore        
+
+    table.AddColumn("№") |> ignore
+    table.AddColumn("Interval") |> ignore
+    table.AddColumn("deln") |> ignore
+    table.AddColumn("deln/n") |> ignore
+    table.AddColumn("a") |> ignore
+
+    addRow 1 (average - stDeviation) (average + stDeviation) 0.68
+    addRow 2 (average - 2.0 * stDeviation) (average + 2.0 * stDeviation) 0.95
+    addRow 3 (average - 3.0 * stDeviation) (average + 3.0 * stDeviation) 0.997
+
+    AnsiConsole.Write(table);
+
+
 
 let array = readFile "C:\Users\sereg\Desktop\1.txt"
 let average = arithmeticAverage array
@@ -128,5 +158,7 @@ printfn "AverageAbsoluteError: %f" abs
 printfn "ErrorElem: elem = (%f +- %f) %s" average abs (nameof uConfidenceLevel.p95)
 
 DisplayHistorgramDataTable array
+
+DisplayRatioAccuracyTable array average stand
 
 Console.ReadKey true |> ignore
