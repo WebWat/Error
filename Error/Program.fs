@@ -19,9 +19,9 @@ printfn "Средняя квадратичая погрешность (оцен�
 printfn "Средняя абсолютная погрешность:
 %f" abs
 printfn "Абсолютная погрешность измерений:
-elem = (%0.3f +- %0.3f), %s" average abs (nameof uConfidenceLevel.p95)
+elem = (%0.3f +- %0.3f), %s\n" average abs (nameof uConfidenceLevel.p95)
 
-DisplayHistorgramDataTable array
+DisplayHistorgramAndDataTable array 20
 
 DisplayRatioAccuracyTable array average stand
 

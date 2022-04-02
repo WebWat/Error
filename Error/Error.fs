@@ -76,6 +76,8 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
                               | 19 -> 2.0930
                               | 20 -> 2.08600
                               | 30 -> 2.0423
+                              | 120 -> 1.9719
+                              | 270 -> 1.9695
                               | measuresLength -> 0
 
     | confidenceLevel -> 0
@@ -85,25 +87,24 @@ let AverageAbsoluteError (stDeviation: float) (measuresLength: int) (confidenceL
     stDeviation * getStudentCoefficient measuresLength confidenceLevel
 
 
-let DisplayHistorgramDataTable (measures: float[]) : unit =
+let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
     let table = Table();
 
-    let del = ((measures |> Array.max) - (measures |> Array.min)) / 7.0
+    let del = ((measures |> Array.max) - (measures |> Array.min)) / float(rows)
     let mutable first = measures |> Array.min
-
-    let maxHistorgramSize = 60
 
     table.AddColumn("№") |> ignore
     table.AddColumn("Границы интервалов") |> ignore
     table.AddColumn("deln") |> ignore // результатов наблюдений Δn, попавших в каждый интервал
     table.AddColumn("deln/(n delt)") |> ignore // значения плотности вероятности попадания
                                                // случайной величины в интервал
-
-    for i = 1 to 7 do
+    for i = 1 to rows do
         let deln = Array.where (fun x -> x > first && x < first + del) measures 
                    |> Array.length
 
         let density = float(deln)/float(measures.Length)
+
+        printfn $"({first:f3}; {(first + del):f3}): {String('=', int((density * 1000.0 * 100.0) / 1000.0))}"
 
         table.AddRow(
             string(i), 
