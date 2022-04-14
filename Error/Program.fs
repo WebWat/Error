@@ -2,7 +2,7 @@
 
 open Error
 
-let array = readFile "C:\Users\sereg\Desktop\1.txt"
+let array = readFile "C:\Users\sereg\Desktop\2.txt"
 let average = arithmeticAverage array
 let stand = standardDeviation array average
 let standerr = standardError array average
@@ -21,8 +21,10 @@ printfn "Средняя абсолютная погрешность:
 printfn "Абсолютная погрешность измерений:
 x = (%0.3f +- %0.3f), %s\n" average abs (nameof uConfidenceLevel.p95)
 
-DisplayHistorgramAndDataTable array 20
+DisplayHistorgramAndDataTable array 7
 
 DisplayRatioAccuracyTable array average stand
+
+saveOutput array
 
 Console.ReadKey true |> ignore

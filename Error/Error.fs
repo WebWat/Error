@@ -22,21 +22,22 @@ let readFile (path:string) : float[] =
     line <- reader.ReadLine()
 
     while line <> null do
-        list.Add(float(line))
+        list.AddRange(Array.map (fun x -> float(x)) (line.Split(" ")))
         line <- reader.ReadLine()
 
     list.ToArray()
     
 // Trash
 let generateRandomMeasures (min: int) (max: int) (decimalPlace: int) (count: int) : float[] =
-    let random = Random()
+    let random = Random(Guid.NewGuid().GetHashCode())
     Array.init count (
         fun _ -> 
-        let first = random.Next(min, max)
-        let second = random.NextDouble() * pown 10.0 decimalPlace
+            let first = random.Next(min, max)
+            let second = random.NextDouble() * pown 10.0 decimalPlace
 
-        float(first) + float(int(second)) / pown 10.0 decimalPlace
+            float(first) + float(int(second)) / pown 10.0 decimalPlace
     )
+
 
 let arithmeticAverage (measures: float[]) : float =
     Array.sum measures / float(measures.Length)
@@ -51,7 +52,7 @@ let standardError (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
     sqrt(sum/(float(measures.Length) * (float(measures.Length) - 1.0)))
 
-
+// https://www.chem-astu.ru/science/reference/t-statistic.html
 let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLevel) : float =
     match confidenceLevel with
     | uConfidenceLevel.p95 -> match measuresLength with
@@ -76,8 +77,13 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
                               | 19 -> 2.0930
                               | 20 -> 2.08600
                               | 30 -> 2.0423
+                              | 40 -> 2.0211
+                              | 50 -> 2.0086
+                              | 100 -> 1.9840
                               | 120 -> 1.9719
                               | 270 -> 1.9695
+                              | 500 -> 1.9640
+                              | 900 -> 1.9600
                               | measuresLength -> 0
 
     | confidenceLevel -> 0
@@ -146,3 +152,26 @@ let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation:
     addRow 3 (average - 3.0 * stDeviation) (average + 3.0 * stDeviation) 0.997
 
     AnsiConsole.Write(table);
+
+
+let saveOutput (measures: float[]) : unit =
+    let random = Random();
+    use writer = new StreamWriter(File.Create($"C:\\Users\\sereg\\Desktop\\report_{random.Next(100, 999)}.txt"))
+
+    let average = arithmeticAverage measures
+    let stand = standardDeviation measures average
+    let standerr = standardError measures average
+    let abs = AverageAbsoluteError standerr measures.Length uConfidenceLevel.p95
+
+    writer.WriteLine($"Число данных:\n{measures.Length}")
+    writer.WriteLine("Массив:")
+    for i = 0 to 15 do
+        writer.Write($"{measures[i]}, ")
+    writer.WriteLine("...")
+    writer.WriteLine($"Среднее арифметическое:\n{average:f3}")
+    writer.WriteLine($"Среднеквадратическое отклонение (случайная погрешность отдельного измерения):\n{stand:f3}")
+    writer.WriteLine($"Средняя квадратичая погрешность (оценка погрешности всей серии измерений):\n{standerr:f3}")
+    writer.WriteLine($"Средняя абсолютная погрешность:\n{abs:f3}")
+    writer.WriteLine($"Абсолютная погрешность измерений:\nx = ({average:f3} +- {abs:f3}), {(nameof uConfidenceLevel.p95)}\n")
+
+    writer.Flush()
