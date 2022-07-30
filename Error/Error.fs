@@ -1,9 +1,11 @@
 ﻿module Error
 
+
 open System
 open Spectre.Console
 open System.Collections.Generic
 open System.IO
+
 
 type uConfidenceLevel =
     | p80 = 0
@@ -21,33 +23,23 @@ let readFile (path:string) : float[] =
     line <- reader.ReadLine()
 
     while line <> null do
-        list.Add(float(line))
+        list.AddRange(Array.map (fun x -> float(x)) (line.Split(" ")))
         line <- reader.ReadLine()
 
     list.ToArray()
     
-// Trash
-let generateRandomMeasures (min: int) (max: int) (decimalPlace: int) (count: int) : float[] =
-    let random = Random()
-    Array.init count (
-        fun _ -> 
-        let first = random.Next(min, max)
-        let second = random.NextDouble() * pown 10.0 decimalPlace
-
-        float(first) + float(int(second)) / pown 10.0 decimalPlace
-    )
 
 let arithmeticAverage (measures: float[]) : float =
     Array.sum measures / float(measures.Length)
  
-// Случайную погрешность отдельного измерения характеризует так называемое 
-// среднеквадратическое отклонение
+// The random error of an individual measurement is 
+// characterized by the so-called standard deviation.
 let standardDeviation (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
     sqrt(sum/(float(measures.Length) - 1.0))
 
-// Для оценки погрешности всей серии измерений, вместо отдельного измерения надо 
-// найти среднюю квадратичную погрешность среднего арифметического
+// To estimate the error of the whole series of measurements, instead of 
+// a single measurement you should find the root mean square error of the arithmetic mean.
 let standardError (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
     sqrt(sum/(float(measures.Length) * (float(measures.Length) - 1.0)))
@@ -77,40 +69,50 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
                               | 19 -> 2.0930
                               | 20 -> 2.08600
                               | 30 -> 2.0423
+                              | 40 -> 2.0211
+                              | 50 -> 2.0086
+                              | 100 -> 1.9840
+                              | 120 -> 1.9719
+                              | 270 -> 1.9695
+                              | 500 -> 1.9640
+                              | 900 -> 1.9600
+                              | measuresLength when measuresLength >= 900 -> 1.9600
                               | measuresLength -> 0
 
     | confidenceLevel -> 0
 
-// Средняя абсолютная погрешность
+// Average absolute error.
 let AverageAbsoluteError (stDeviation: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
     stDeviation * getStudentCoefficient measuresLength confidenceLevel
 
-let DisplayHistorgramDataTable (measures: float[]) : unit =
-    let table = new Table();
+let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
+    let table = Table();
 
-    let del = ((measures |> Array.max) - (measures |> Array.min)) / 7.0
+    let del = ((measures |> Array.max) - (measures |> Array.min)) / float(rows)
     let mutable first = measures |> Array.min
-
-    let maxHistorgramSize = 60
 
     table.AddColumn("№") |> ignore
     table.AddColumn("Interval") |> ignore
-    table.AddColumn("deln") |> ignore // результатов наблюдений Δn, попавших в
-                                      // каждый интервал
-    table.AddColumn("deln/(n*delt)") |> ignore // значения плотности вероятности попадания
-                                               // случайной величины в интервал
 
-    for i = 1 to 7 do
+    // The results of observations Δn falling in each interval.
+    table.AddColumn("deln") |> ignore 
+
+    // Values of the probability density of a random variable in the interval.
+    table.AddColumn("deln/(n*delt)") |> ignore 
+
+    for i = 1 to rows do
         let deln = Array.where (fun x -> x > first && x < first + del) measures 
                    |> Array.length
 
         let density = float(deln)/float(measures.Length)
 
+        printfn $"({first:f3}; {(first + del):f3}): {String('=', int(density * 100.0))}"
+
         table.AddRow(
             string(i), 
             $"({first:f3}; {(first + del):f3})", 
             string(deln),
-            string(density)
+            $"{density:f3}"
         ) |> ignore
         
         first <- first + del
@@ -130,7 +132,7 @@ let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation:
             string(number), 
             $"({left:f3}; {right:f3})", 
             string(deln),
-            string(density),
+            $"{density:f3}",
             string(a)
         ) |> ignore        
 
