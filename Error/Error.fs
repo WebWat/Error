@@ -26,17 +26,6 @@ let readFile (path:string) : float[] =
         line <- reader.ReadLine()
 
     list.ToArray()
-    
-// Trash
-let generateRandomMeasures (min: int) (max: int) (decimalPlace: int) (count: int) : float[] =
-    let random = Random(Guid.NewGuid().GetHashCode())
-    Array.init count (
-        fun _ -> 
-            let first = random.Next(min, max)
-            let second = random.NextDouble() * pown 10.0 decimalPlace
-
-            float(first) + float(int(second)) / pown 10.0 decimalPlace
-    )
 
 
 let arithmeticAverage (measures: float[]) : float =
