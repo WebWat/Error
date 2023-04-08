@@ -41,7 +41,7 @@ let standardDeviation (measures: float[]) (average: float) : float =
 // To estimate the error of the whole series of measurements, instead of 
 // a single measurement you should find the root mean square error of the arithmetic mean.
 let standardError (measures: float[]) (average: float) : float =
-    let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
+    let sum: float = Array.sumBy (fun x -> pown (x - average) 2) measures
     sqrt(sum/(float(measures.Length) * (float(measures.Length) - 1.0)))
 
 // https://www.chem-astu.ru/science/reference/t-statistic.html
@@ -76,14 +76,14 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
                               | 270 -> 1.9695
                               | 500 -> 1.9640
                               | 900 -> 1.9600
-                              | measuresLength when measuresLength >= 900 -> 1.9600
+                              | measuresLength when measuresLength > 900 -> 1.9600
                               | measuresLength -> 0
 
     | confidenceLevel -> 0
 
 // Average absolute error.
-let AverageAbsoluteError (stDeviation: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
-    stDeviation * getStudentCoefficient measuresLength confidenceLevel
+let AverageAbsoluteError (stError: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
+    stError * getStudentCoefficient measuresLength confidenceLevel
 
 let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
     let table = Table();
