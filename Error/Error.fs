@@ -1,18 +1,15 @@
 ﻿module Error
 
-
 open System
 open Spectre.Console
 open System.Collections.Generic
 open System.IO
-
 
 type uConfidenceLevel =
     | p80 = 0
     | p90 = 1
     | p95 = 2
     | p99 = 3
-
 
 let readFile (path:string) : float[] = 
     let list = List<float>()
@@ -23,26 +20,25 @@ let readFile (path:string) : float[] =
     line <- reader.ReadLine()
 
     while line <> null do
-        list.AddRange(Array.map (fun x -> float(x)) (line.Split(" ")))
+        list.AddRange(Array.map (fun x -> float x) (line.Split(" ")))
         line <- reader.ReadLine()
 
     list.ToArray()
     
-
 let arithmeticAverage (measures: float[]) : float =
-    Array.sum measures / float(measures.Length)
+    Array.sum measures / float measures.Length
  
 // The random error of an individual measurement is 
 // characterized by the so-called standard deviation.
 let standardDeviation (measures: float[]) (average: float) : float =
-    let sum: float = Array.sumBy (fun x -> (x - average) * (x - average)) measures
-    sqrt(sum/(float(measures.Length) - 1.0))
-
-// To estimate the error of the whole series of measurements, instead of 
-// a single measurement you should find the root mean square error of the arithmetic mean.
-let standardError (measures: float[]) (average: float) : float =
     let sum: float = Array.sumBy (fun x -> pown (x - average) 2) measures
-    sqrt(sum/(float(measures.Length) * (float(measures.Length) - 1.0)))
+    sqrt(sum / (float measures.Length - 1.0))
+
+// To estimate the error of the whole series of measurements 
+// it is needed to find the standard deviation of the arithmetic mean.
+let standardDeviationOfMean (measures: float[]) (average: float) : float =
+    let sum: float = Array.sumBy (fun x -> pown (x - average) 2) measures
+    sqrt(sum / (float measures.Length  * (float measures.Length - 1.0)))
 
 // https://www.chem-astu.ru/science/reference/t-statistic.html
 let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLevel) : float =
@@ -82,10 +78,10 @@ let getStudentCoefficient (measuresLength: int) (confidenceLevel: uConfidenceLev
     | confidenceLevel -> 0
 
 // Average absolute error.
-let AverageAbsoluteError (stError: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
-    stError * getStudentCoefficient measuresLength confidenceLevel
+let averageAbsoluteError (stdDevMean: float) (measuresLength: int) (confidenceLevel: uConfidenceLevel) =
+    stdDevMean * getStudentCoefficient measuresLength confidenceLevel
 
-let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
+let displayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
     let table = Table();
 
     let del = ((measures |> Array.max) - (measures |> Array.min)) / float(rows)
@@ -98,13 +94,13 @@ let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
     table.AddColumn("deln") |> ignore 
 
     // Values of the probability density of a random variable in the interval.
-    table.AddColumn("deln/(n*delt)") |> ignore 
+    table.AddColumn("deln/n") |> ignore 
 
     for i = 1 to rows do
         let deln = Array.where (fun x -> x > first && x < first + del) measures 
                    |> Array.length
 
-        let density = float(deln)/float(measures.Length)
+        let density = float deln / float measures.Length
 
         printfn $"({first:f3}; {(first + del):f3}): {String('=', int(density * 100.0))}"
 
@@ -119,14 +115,14 @@ let DisplayHistorgramAndDataTable (measures: float[]) (rows: int) : unit =
 
     AnsiConsole.Write(table);
 
-let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation: float) : unit =
+let displayRatioAccuracyTable (measures: float[]) (average: float) (stdDev: float) : unit =
     let table = new Table();
 
     let addRow (number: int) (left: float) (right: float) (a: float) = 
         let deln = Array.where (fun x -> x > left && x < right) measures 
                    |> Array.length
 
-        let density = float(deln)/float(measures.Length)
+        let density = float deln / float measures.Length
 
         table.AddRow(
             string(number), 
@@ -142,8 +138,8 @@ let DisplayRatioAccuracyTable (measures: float[]) (average: float) (stDeviation:
     table.AddColumn("deln/n") |> ignore
     table.AddColumn("a") |> ignore
 
-    addRow 1 (average - stDeviation) (average + stDeviation) 0.68
-    addRow 2 (average - 2.0 * stDeviation) (average + 2.0 * stDeviation) 0.95
-    addRow 3 (average - 3.0 * stDeviation) (average + 3.0 * stDeviation) 0.997
+    addRow 1 (average - stdDev) (average + stdDev) 0.68
+    addRow 2 (average - 2.0 * stdDev) (average + 2.0 * stdDev) 0.95
+    addRow 3 (average - 3.0 * stdDev) (average + 3.0 * stdDev) 0.997
 
     AnsiConsole.Write(table);
